@@ -1,9 +1,4 @@
-gradio==5.38.2
-pandas
+gradio
 numpy
-scikit-learn==1.4.1.post1
-matplotlib
-seaborn
 joblib
-xgboost
-gunicorn
+scikit-learn==1.4.1.post1
