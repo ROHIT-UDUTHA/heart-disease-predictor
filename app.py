@@ -1,6 +1,7 @@
+import os
 import joblib
-import gradio as gr
 import numpy as np
+import gradio as gr
 
 # Load trained model and scaler
 model = joblib.load("heart_disease_model.pkl")
@@ -20,7 +21,7 @@ def predict_heart_disease(
     oldpeak,
     slope,
     ca,
-    thal
+    thal,
 ):
     patient = np.array([[
         age,
@@ -39,66 +40,81 @@ def predict_heart_disease(
     ]])
 
     patient_scaled = scaler.transform(patient)
+
     prediction = model.predict(patient_scaled)[0]
     probability = model.predict_proba(patient_scaled)[0][1]
 
     if prediction == 1:
-        risk = "🚨 High Risk"
-        recommendations = """
-- 🩺 **Consult a Cardiologist immediately** for comprehensive evaluation.
-- 🥗 **Maintain a Heart-Healthy Diet**: Low sodium, reduced saturated fats, high fiber.
-- 🏃‍♂️ **Exercise Precautions**: Consult physician before physical exertion.
-- 🚭 **Lifestyle**: Avoid smoking and limit alcohol intake.
-- 📉 **Diagnostics**: Schedule ECG, Echocardiogram, and stress test.
+        risk = "🔴 High Risk"
+        advice = """
+### Recommendation
+
+- Consult a cardiologist.
+- Maintain a heart-healthy diet.
+- Exercise regularly.
+- Avoid smoking and alcohol.
+- Schedule ECG/ECHO if advised.
 """
     else:
-        risk = "✅ Low Risk"
-        recommendations = """
-- 💪 **Maintain Healthy Lifestyle**: Keep up regular physical activity and balanced nutrition.
-- 🩺 **Routine Checkups**: Schedule annual health screenings.
-- 🥦 **Balanced Diet**: Emphasize whole grains, lean proteins, vegetables, and fruit.
-- 🧘‍♂️ **Wellness**: Practice stress management and ensure quality sleep.
+        risk = "🟢 Low Risk"
+        advice = """
+### Recommendation
+
+- Continue a healthy lifestyle.
+- Exercise regularly.
+- Eat a balanced diet.
+- Get routine health checkups.
 """
 
-    result_md = f"""
-### 📊 Prediction Result Summary
+    return f"""
+# ❤️ Heart Disease Prediction
 
-| Indicator | Result |
-| :--- | :--- |
-| **Risk Assessment** | **{risk}** |
-| **Disease Probability** | **{probability:.2%}** |
-| **Classification** | **{'Heart Disease Detected' if prediction == 1 else 'No Disease Detected'}** |
+### Prediction
+**{"Heart Disease Detected" if prediction == 1 else "No Heart Disease Detected"}**
 
----
+### Risk Level
+**{risk}**
 
-### 📋 Recommended Actions
-{recommendations}
+### Probability
+**{probability:.2%}**
+
+{advice}
 """
-    return result_md
 
 
 demo = gr.Interface(
     fn=predict_heart_disease,
     inputs=[
-        gr.Number(label="Age (Years)", value=50),
-        gr.Radio(choices=[0, 1], label="Sex (0: Female, 1: Male)", value=1),
-        gr.Dropdown(choices=[0, 1, 2, 3], label="Chest Pain Type (0: Typical Angina, 1: Atypical, 2: Non-anginal, 3: Asymptomatic)", value=0),
-        gr.Number(label="Resting Blood Pressure (mm Hg)", value=120),
-        gr.Number(label="Serum Cholesterol (mg/dl)", value=220),
-        gr.Radio(choices=[0, 1], label="Fasting Blood Sugar > 120 mg/dl (0: No, 1: Yes)", value=0),
-        gr.Dropdown(choices=[0, 1, 2], label="Resting ECG Results (0: Normal, 1: ST-T Abnormality, 2: LV Hypertrophy)", value=1),
-        gr.Number(label="Maximum Heart Rate Achieved (Thalach)", value=150),
-        gr.Radio(choices=[0, 1], label="Exercise Induced Angina (0: No, 1: Yes)", value=0),
-        gr.Number(label="ST Depression Induced by Exercise (Oldpeak)", value=1.0),
-        gr.Dropdown(choices=[0, 1, 2], label="Slope of Peak Exercise ST Segment (0: Upsloping, 1: Flat, 2: Downsloping)", value=2),
-        gr.Dropdown(choices=[0, 1, 2, 3], label="Major Vessels Colored by Fluoroscopy (CA)", value=0),
-        gr.Dropdown(choices=[0, 1, 2, 3], label="Thalassemia (0: Normal, 1: Fixed Defect, 2: Reversable Defect, 3: Other)", value=2)
+        gr.Number(label="Age", value=50),
+        gr.Radio([0, 1], label="Sex (0=Female, 1=Male)", value=1),
+        gr.Dropdown([0, 1, 2, 3], label="Chest Pain Type", value=0),
+        gr.Number(label="Resting Blood Pressure", value=120),
+        gr.Number(label="Cholesterol", value=220),
+        gr.Radio([0, 1], label="Fasting Blood Sugar (>120 mg/dl)", value=0),
+        gr.Dropdown([0, 1, 2], label="Resting ECG", value=1),
+        gr.Number(label="Maximum Heart Rate", value=150),
+        gr.Radio([0, 1], label="Exercise Induced Angina", value=0),
+        gr.Number(label="Oldpeak", value=1.0),
+        gr.Dropdown([0, 1, 2], label="Slope", value=2),
+        gr.Dropdown([0, 1, 2, 3], label="Major Vessels (CA)", value=0),
+        gr.Dropdown([0, 1, 2, 3], label="Thalassemia", value=2),
     ],
     outputs=gr.Markdown(),
-    title="❤️ AI-Powered Heart Disease Risk Assessment System",
-    description="Enter clinical parameters to predict heart disease risk using the trained machine learning model."
+    title="❤️ AI-Powered Heart Disease Prediction",
+    description="""
+Enter the patient's clinical details and click **Submit**.
+
+The prediction is generated using a trained Random Forest Machine Learning model.
+""",
+    theme=gr.themes.Soft(),
 )
 
+
 if __name__ == "__main__":
-    print("Launching Gradio App...", flush=True)
-    demo.launch(server_name="127.0.0.1", server_port=7860, share=True)
+    port = int(os.environ.get("PORT", 10000))
+
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=port,
+        share=False,
+    )
