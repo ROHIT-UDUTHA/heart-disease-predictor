@@ -646,4 +646,14 @@ demo = gr.Interface(
     theme=gr.themes.Soft()
 )
 
-demo.launch(share=True)
+import os
+
+if __name__ == "__main__":
+    port = int(os.environ.get("PORT", 10000))  
+    print(f"Launching Gradio on port {port}...", flush=True)
+
+    demo.launch(
+        server_name="0.0.0.0",
+        server_port=port,
+        share=False
+    )
